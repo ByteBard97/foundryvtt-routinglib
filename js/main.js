@@ -22,14 +22,14 @@ function initializePathfinder(from, to, options) {
 					? token.losHeight
 					: token.document.elevation;
 		}
-		if (canvas.grid.isHex) {
+		if (canvas.grid.isHexagonal) {
 			tokenData.size = getHexTokenSize(token);
 			tokenData.altOrientation = getAltOrientationFlagForToken(token, tokenData.size);
 		}
 	} else {
 		tokenData = {width: 1, height: 1};
 		elevation = elevation ?? 0;
-		if (canvas.grid.isHex) {
+		if (canvas.grid.isHexagonal) {
 			tokenData.size = 1;
 			tokenData.altOrientation = false;
 		}

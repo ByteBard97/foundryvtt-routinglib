@@ -57,21 +57,21 @@ class Cache {
 export class GriddedCache extends Cache {
 	reset() {
 		super.reset();
-		if (canvas.grid.isHex && canvas.grid.grid.columnar) {
-			this.gridWidth = Math.ceil(canvas.dimensions.width / ((3 / 4) * canvas.grid.w));
+		if (canvas.grid.isHexagonal && canvas.grid.columnar) {
+			this.gridWidth = Math.ceil(canvas.dimensions.width / ((3 / 4) * canvas.grid.sizeX));
 		} else {
-			this.gridWidth = Math.ceil(canvas.dimensions.width / canvas.grid.w);
+			this.gridWidth = Math.ceil(canvas.dimensions.width / canvas.grid.sizeX);
 		}
-		if (canvas.grid.isHex && !canvas.grid.grid.columnar) {
-			this.gridHeight = Math.ceil(canvas.dimensions.height / ((3 / 4) * canvas.grid.h));
+		if (canvas.grid.isHexagonal && !canvas.grid.columnar) {
+			this.gridHeight = Math.ceil(canvas.dimensions.height / ((3 / 4) * canvas.grid.sizeY));
 		} else {
-			this.gridHeight = Math.ceil(canvas.dimensions.height / canvas.grid.h);
+			this.gridHeight = Math.ceil(canvas.dimensions.height / canvas.grid.sizeY);
 		}
 	}
 
 	static getSnapPointIndexForTokenData(tokenData) {
 		if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) return 0;
-		if (canvas.grid.isHex) {
+		if (canvas.grid.isHexagonal) {
 			if (tokenData.hexSizeSupport?.altSnappingFlag) {
 				return tokenData.hexSizeSupport.borderSize % 2;
 			} else {
@@ -95,9 +95,8 @@ export class GriddedCache extends Cache {
 		let node = graph[pos.y][pos.x];
 		if (!node) {
 			const neighbors = [];
-			for (const neighborPos of canvas.grid.grid.getNeighbors(pos.y, pos.x).map(([y, x]) => {
-				return {x, y};
-			})) {
+			for (const neighborPos of canvas.grid.getAdjacentOffsets({x: pos.x, y: pos.y})
+					.map(a => { return {x: (a.i - 1) + pos.x, y: (a.j - 1) + pos.y} })) {
 				if (
 					neighborPos.x < 0 ||
 					neighborPos.y < 0 ||
@@ -219,7 +218,7 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 		adjustedStart = stepStart;
 	}
 	adjustedStart.t = adjustedStart.b = tokenData.elevation;
-	const source = new VisionSource({});
+	const source = new foundry.canvas.sources.PointVisionSource({});
 	return CONFIG.Canvas.polygonBackends.move.testCollision(adjustedStart, stepEnd, {
 		mode: "any",
 		type: "move",
