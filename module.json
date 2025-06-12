@@ -5,7 +5,7 @@
 	"version": "1.1.0",
 	"compatibility": {
 		"minimum": "11",
-		"verified": "11"
+		"verified": "12"
 	},
 	"authors": [
 		{
@@ -15,11 +15,10 @@
 		}
 	],
 	"esmodules": ["js/main.js"],
-	"url": "https://github.com/manuelVo/foundryvtt-routinglib",
-	"download": "https://github.com/manuelVo/foundryvtt-routinglib/releases/download/v1.1.0/routinglib-1.1.0.zip",
-	"manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-routinglib/master/module.json",
+	"url": "https://github.com/Terrox/foundryvtt-routinglib",
+	"download": "https://github.com/Terrox/foundryvtt-routinglib/releases/download/v1.1.1/routinglib-1.1.1.zip",
+	"manifest": "https://raw.githubusercontent.com/Terrox/foundryvtt-routinglib/master/module.json",
 	"readme": "https://github.com/manuelVo/foundryvtt-routinglib/blob/master/README.md",
-	"changelog": "https://github.com/manuelVo/foundryvtt-routinglib/blob/master/CHANGELOG.md",
+	"changelog": "https://github.com/Terrox/foundryvtt-routinglib/blob/develop/CHANGELOG.md",
 	"bugs": "https://github.com/manuelVo/foundryvtt-routinglib/issues",
-	"allowBugReporter": false
 }
