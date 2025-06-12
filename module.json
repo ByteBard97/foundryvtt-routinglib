@@ -20,5 +20,5 @@
 	"manifest": "https://raw.githubusercontent.com/Terrox/foundryvtt-routinglib/master/module.json",
 	"readme": "https://github.com/manuelVo/foundryvtt-routinglib/blob/master/README.md",
 	"changelog": "https://github.com/Terrox/foundryvtt-routinglib/blob/develop/CHANGELOG.md",
-	"bugs": "https://github.com/manuelVo/foundryvtt-routinglib/issues",
+	"bugs": "https://github.com/manuelVo/foundryvtt-routinglib/issues"
 }
