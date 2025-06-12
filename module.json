@@ -16,7 +16,7 @@
 	],
 	"esmodules": ["js/main.js"],
 	"url": "https://github.com/Terrox/foundryvtt-routinglib",
-	"download": "https://github.com/Terrox/foundryvtt-routinglib/releases/download/v1.1.1/routinglib-1.1.1.zip",
+	"download": "https://github.com/Terrox/foundryvtt-routinglib/archive/refs/tags/develop.zip",
 	"manifest": "https://raw.githubusercontent.com/Terrox/foundryvtt-routinglib/master/module.json",
 	"readme": "https://github.com/manuelVo/foundryvtt-routinglib/blob/master/README.md",
 	"changelog": "https://github.com/Terrox/foundryvtt-routinglib/blob/develop/CHANGELOG.md",
