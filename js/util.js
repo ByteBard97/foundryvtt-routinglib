@@ -1,5 +1,25 @@
+/**
+ * Return the grid snap point for a specific token at pixel coordinates (x, y).
+ *
+ * Foundry VTT v13 introduced `canvas.grid.getSnappedPosition`, which already
+ * handles the various square/hex/grid-less edge-cases for us.  When that
+ * helper exists we delegate to it directly.  For older core versions we fall
+ * back to the legacy helper which recreates the same logic using a
+ * token-shaped data object.
+ */
 export function getSnapPointForToken(x, y, token) {
-	return getSnapPointForTokenData(x, y, buildSnapPointTokenData(token));
+	if (typeof canvas?.grid?.getSnappedPosition === "function") {
+		const snap = canvas.grid.getSnappedPosition(x, y, token);
+		return new PIXI.Point(snap.x, snap.y);
+	}
+
+	// Fallback for Foundry versions < 13 – re-calculate tokenData manually
+	const tokenData = {width: token.document.width, height: token.document.height};
+	if (canvas.grid.isHexagonal) {
+		tokenData.size = getHexTokenSize(token);
+		tokenData.altOrientation = getAltOrientationFlagForToken(token, tokenData.size);
+	}
+	return getSnapPointForTokenData(x, y, tokenData);
 }
 
 export function getSnapPointForTokenDataObj(pos, tokenData) {

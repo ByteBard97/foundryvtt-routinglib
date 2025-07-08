@@ -75,6 +75,7 @@ export class GriddedPathfinder {
 				continue;
 			}
 			let cost;
+			// @ts-ignore - terrainRuler global provided by module
 			if (window.terrainRuler && !this.ignoreTerrain) {
 				const offset = buildOffset(currentNode.node, neighbor);
 				cost = this.terrainCostForStep(tokenArea, offset, currentNode.cost);
@@ -111,7 +112,9 @@ export class GriddedPathfinder {
 			let measured = terrainRuler.measureDistances([{ray}], {token: this.token})[0];
 			// TODO Maybe terrain ruler could just return the distance in cells in the first place
 			measured = Math.round(measured / canvas.dimensions.distance);
-			if (ray.terrainRulerFinalState?.noDiagonals === 1) {
+			// @ts-ignore - properties added by terrainRuler module
+			const rulerState = ray.rulerState ?? ray.terrainRulerFinalState;
+			if (rulerState?.noDiagonals === 1) {
 				measured += 0.5;
 			}
 			distance = Math.max(distance, measured);
@@ -130,6 +133,7 @@ export class GriddedPathfinder {
 					!stepCollidesWithWall(path[path.length - 2], currentNode.node, this.tokenData)
 				) {
 					// Replace last waypoint if the current waypoint leads to a valid path that isn't longer than the old path
+					// @ts-ignore - terrainRuler global provided by module
 					if (window.terrainRuler) {
 						const startNode = path[path.length - 2];
 						const middleNode = path[path.length - 1];
@@ -188,7 +192,7 @@ export class GridlessPathfinder {
 	}
 
 	reset() {
-		GridlessPathfinding.resetPathfinder();
+		GridlessPathfinding.resetPathfinder(this.pathfinder);
 	}
 
 	step() {

@@ -2,3 +2,4 @@
 artifact/
 #wasm/
 .vscode/
+node_modules/

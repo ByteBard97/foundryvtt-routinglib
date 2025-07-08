@@ -217,8 +217,9 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 	} else {
 		adjustedStart = stepStart;
 	}
+	// @ts-ignore - dynamic properties for collision backend
 	adjustedStart.t = adjustedStart.b = tokenData.elevation;
-	const source = new foundry.canvas.sources.PointVisionSource({});
+	const source = new foundry.canvas.sources.PointVisionSource();
 	return CONFIG.Canvas.polygonBackends.move.testCollision(adjustedStart, stepEnd, {
 		mode: "any",
 		type: "move",

@@ -12,15 +12,14 @@ function initializePathfinder(from, to, options) {
 	const token = options.token;
 
 	let elevation = options.elevation;
-	let tokenData;
+	/** @type {any} */ let tokenData;
 
 	if (token) {
 		tokenData = {width: token.document.width, height: token.document.height};
 		if (!elevation) {
-			elevation =
-				isModuleActive("wall-height") && WallHeight._blockSightMovement
-					? token.losHeight
-					: token.document.elevation;
+			elevation = isModuleActive("wall-height") && token.losHeight !== undefined
+				? token.losHeight
+				: token.document.elevation;
 		}
 		if (canvas.grid.isHexagonal) {
 			tokenData.size = getHexTokenSize(token);

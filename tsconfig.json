@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "types": ["@league-of-foundry-developers/foundry-vtt-types"]
+  },
+  "include": ["js/**/*.js", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "wasm"]
+}

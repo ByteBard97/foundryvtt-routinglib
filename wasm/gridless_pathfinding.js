@@ -1,3 +1,4 @@
+// @ts-nocheck
 let wasm;
 
 const heap = new Array(128).fill(undefined);
