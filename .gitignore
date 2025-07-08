@@ -1,4 +1,4 @@
 /foundry*.js
 artifact/
-wasm/
+#wasm/
 .vscode/
