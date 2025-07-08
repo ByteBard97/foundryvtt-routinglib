@@ -35,8 +35,8 @@ export class GriddedPathfinder {
 			node => node.estimated,
 		);
 		this.previousNodes = new Set();
-		this.gridWidth = Math.ceil(canvas.dimensions.width / canvas.grid.w);
-		this.gridHeight = Math.ceil(canvas.dimensions.height / canvas.grid.h);
+		this.gridWidth = Math.ceil(canvas.dimensions.width / canvas.grid.sizeX);
+		this.gridHeight = Math.ceil(canvas.dimensions.height / canvas.grid.sizeY);
 		this.startNode = cache.getInitializedNode(
 			this.startPos,
 			this.sizeIndex,
