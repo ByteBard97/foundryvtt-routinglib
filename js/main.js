@@ -1,5 +1,5 @@
 import {initializeBackground, createAsyncPathfinder, cancelJob} from "./background.js";
-import {cache, GriddedCache, initializeCaches, wipeCaches} from "./cache.js";
+import {cache, GriddedCache, initializeCaches, wipeCaches, enableDebugForPositions, disableDebug, debugNarrowPassages, debugHorizontalBarrier, debugSummary, pixelToGrid, gridToPixel, analyzeWalls, findWallsInArea} from "./cache.js";
 import {GriddedPathfinder, GridlessPathfinder} from "./pathfinder.js";
 
 import initGridlessPathfinding from "../wasm/gridless_pathfinding.js";
@@ -128,7 +128,22 @@ function initializeIfReady() {
 	// eslint-disable-next-line no-console
 	console.log(`%cRoutingLib v${version}  build ${BUILD_ID} loaded`, "color:#4caf50; font-family:monospace;");
 
-	window.routinglib = {calculatePath, calculatePathBlocking, cancelPathfinding};
+	window.routinglib = {
+		calculatePath, 
+		calculatePathBlocking, 
+		cancelPathfinding,
+		// Debug functions
+		enableDebugForPositions,
+		disableDebug,
+		debugNarrowPassages,
+		debugHorizontalBarrier,
+		debugSummary,
+		// Coordinate and wall analysis
+		pixelToGrid,
+		gridToPixel,
+		analyzeWalls,
+		findWallsInArea
+	};
 
 	Hooks.on("canvasInit", wipeCaches);
 	// TODO There's no point in re-running jobs when switching scenes. Better cancel them all in that case

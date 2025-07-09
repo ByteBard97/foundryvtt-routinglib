@@ -4,6 +4,222 @@ import {getSnapPointForTokenDataObj, isModuleActive} from "./util.js";
 
 import * as GridlessPathfinding from "../wasm/gridless_pathfinding.js";
 
+// Debug configuration
+const DEBUG_CONFIG = {
+	enabled: true, // Master debug toggle
+	verboseCollision: false, // Detailed collision detection logs - too noisy
+	graphConstruction: false, // Graph building logs
+	specificPositions: [], // Array of {x, y} positions to debug specifically - if empty, debugs all
+	wallIntersections: false, // Wall intersection details - very verbose
+	squeezing: false, // Squeezing/large creature movement logs
+	summaryOnly: true, // Only show final results, not detailed wall-by-wall checks
+	blockedMovements: true, // Always show when movements are blocked
+	allowedMovements: false // Show when movements are allowed (can be noisy)
+};
+
+// Helper function to check if debugging is enabled for a specific position
+function shouldDebugPosition(from, to) {
+	if (!DEBUG_CONFIG.enabled) return false;
+	
+	// If no specific positions are configured, debug all positions
+	if (!DEBUG_CONFIG.specificPositions.length) return true;
+	
+	// Check if either from or to position matches our debug positions
+	return DEBUG_CONFIG.specificPositions.some(pos => 
+		(from.x === pos.x && from.y === pos.y) || 
+		(to.x === pos.x && to.y === pos.y)
+	);
+}
+
+// Export function to enable debugging for specific positions
+export function enableDebugForPositions(positions, options = {}) {
+	DEBUG_CONFIG.enabled = true;
+	DEBUG_CONFIG.specificPositions = positions;
+	DEBUG_CONFIG.verboseCollision = options.verboseCollision ?? false;
+	DEBUG_CONFIG.wallIntersections = options.wallIntersections ?? false;
+	DEBUG_CONFIG.squeezing = options.squeezing ?? false;
+	DEBUG_CONFIG.graphConstruction = options.graphConstruction ?? false;
+	DEBUG_CONFIG.summaryOnly = options.summaryOnly ?? true;
+	DEBUG_CONFIG.blockedMovements = options.blockedMovements ?? true;
+	DEBUG_CONFIG.allowedMovements = options.allowedMovements ?? true;
+	
+	console.log(`[RoutingLib] Debug enabled for positions:`, positions);
+	console.log(`[RoutingLib] Debug options:`, {
+		verboseCollision: DEBUG_CONFIG.verboseCollision,
+		wallIntersections: DEBUG_CONFIG.wallIntersections,
+		squeezing: DEBUG_CONFIG.squeezing,
+		summaryOnly: DEBUG_CONFIG.summaryOnly,
+		blockedMovements: DEBUG_CONFIG.blockedMovements,
+		allowedMovements: DEBUG_CONFIG.allowedMovements
+	});
+}
+
+// Export function to disable all debugging
+export function disableDebug() {
+	DEBUG_CONFIG.enabled = false;
+	DEBUG_CONFIG.specificPositions = [];
+	console.log(`[RoutingLib] Debug disabled`);
+}
+
+// Export function for quick debugging of narrow passage issues
+export function debugNarrowPassages(centerPosition, radius = 2) {
+	const positions = [];
+	for (let x = centerPosition.x - radius; x <= centerPosition.x + radius; x++) {
+		for (let y = centerPosition.y - radius; y <= centerPosition.y + radius; y++) {
+			positions.push({x, y});
+		}
+	}
+	
+	enableDebugForPositions(positions, {
+		blockedMovements: true,
+		allowedMovements: true,
+		wallIntersections: false,
+		summaryOnly: true
+	});
+	
+	console.log(`[RoutingLib] Narrow passage debugging enabled around (${centerPosition.x}, ${centerPosition.y}) with radius ${radius}`);
+}
+
+// Export function to debug a horizontal barrier (like the y=18 issue you're seeing)
+export function debugHorizontalBarrier(yCoordinate, xStart = 10, xEnd = 30) {
+	const positions = [];
+	// Debug positions above and below the barrier
+	for (let x = xStart; x <= xEnd; x++) {
+		positions.push({x, y: yCoordinate - 1});  // Above barrier
+		positions.push({x, y: yCoordinate});      // At barrier  
+		positions.push({x, y: yCoordinate + 1});  // Below barrier
+	}
+	
+	enableDebugForPositions(positions, {
+		blockedMovements: true,
+		allowedMovements: true,
+		wallIntersections: true,  // Enable wall details for barriers
+		squeezing: true,
+		summaryOnly: false
+	});
+	
+	console.log(`[RoutingLib] Horizontal barrier debugging enabled for y=${yCoordinate}, x=${xStart}-${xEnd}`);
+	console.log(`[RoutingLib] Look for blocked movements trying to cross y=${yCoordinate}`);
+}
+
+// Export function to show a summary of what's happening
+export function debugSummary() {
+	console.log(`[RoutingLib] Debug Summary:`);
+	console.log(`  - Enabled: ${DEBUG_CONFIG.enabled}`);
+	console.log(`  - Positions being watched: ${DEBUG_CONFIG.specificPositions.length}`);
+	if (DEBUG_CONFIG.specificPositions.length > 0) {
+		console.log(`  - Position range: (${Math.min(...DEBUG_CONFIG.specificPositions.map(p => p.x))}, ${Math.min(...DEBUG_CONFIG.specificPositions.map(p => p.y))}) to (${Math.max(...DEBUG_CONFIG.specificPositions.map(p => p.x))}, ${Math.max(...DEBUG_CONFIG.specificPositions.map(p => p.y))})`);
+	}
+	console.log(`  - Options:`, DEBUG_CONFIG);
+}
+
+// Export function to convert pixel coordinates to grid coordinates
+export function pixelToGrid(pixelX, pixelY) {
+	const gridX = Math.floor(pixelX / canvas.grid.size);
+	const gridY = Math.floor(pixelY / canvas.grid.size);
+	console.log(`[RoutingLib] Pixel (${pixelX}, ${pixelY}) → Grid (${gridX}, ${gridY})`);
+	return {x: gridX, y: gridY};
+}
+
+// Export function to convert grid coordinates to pixel coordinates  
+export function gridToPixel(gridX, gridY) {
+	const pixelX = gridX * canvas.grid.size + (canvas.grid.size / 2);
+	const pixelY = gridY * canvas.grid.size + (canvas.grid.size / 2);
+	console.log(`[RoutingLib] Grid (${gridX}, ${gridY}) → Pixel (${pixelX}, ${pixelY})`);
+	return {x: pixelX, y: pixelY};
+}
+
+// Export function to analyze all walls and show their grid coordinates
+export function analyzeWalls() {
+	console.log(`[RoutingLib] === WALL ANALYSIS ===`);
+	console.log(`Found ${canvas.walls.placeables.length} walls:`);
+	
+	const walls = canvas.walls.placeables.map((wall, index) => {
+		const startPixel = {x: wall.document.c[0], y: wall.document.c[1]};
+		const endPixel = {x: wall.document.c[2], y: wall.document.c[3]};
+		
+		const startGrid = {
+			x: Math.floor(startPixel.x / canvas.grid.size),
+			y: Math.floor(startPixel.y / canvas.grid.size)
+		};
+		const endGrid = {
+			x: Math.floor(endPixel.x / canvas.grid.size), 
+			y: Math.floor(endPixel.y / canvas.grid.size)
+		};
+		
+		return {
+			index,
+			startPixel,
+			endPixel,
+			startGrid,
+			endGrid,
+			move: wall.document.move,
+			door: wall.document.door,
+			doorState: wall.document.ds,
+			isHorizontal: Math.abs(startPixel.y - endPixel.y) < Math.abs(startPixel.x - endPixel.x),
+			isVertical: Math.abs(startPixel.x - endPixel.x) < Math.abs(startPixel.y - endPixel.y)
+		};
+	});
+	
+	// Group walls by type
+	const horizontalWalls = walls.filter(w => w.isHorizontal);
+	const verticalWalls = walls.filter(w => w.isVertical);
+	
+	console.log(`\n=== HORIZONTAL WALLS (${horizontalWalls.length}) ===`);
+	horizontalWalls.forEach(wall => {
+		console.log(`Wall ${wall.index}: Grid Y=${wall.startGrid.y} from X=${wall.startGrid.x} to X=${wall.endGrid.x} (pixels: ${wall.startPixel.x},${wall.startPixel.y} to ${wall.endPixel.x},${wall.endPixel.y})`);
+	});
+	
+	console.log(`\n=== VERTICAL WALLS (${verticalWalls.length}) ===`);
+	verticalWalls.forEach(wall => {
+		console.log(`Wall ${wall.index}: Grid X=${wall.startGrid.x} from Y=${wall.startGrid.y} to Y=${wall.endGrid.y} (pixels: ${wall.startPixel.x},${wall.startPixel.y} to ${wall.endPixel.x},${wall.endPixel.y})`);
+	});
+	
+	return walls;
+}
+
+// Export function to find walls in a specific grid area
+export function findWallsInArea(minX, minY, maxX, maxY) {
+	console.log(`[RoutingLib] === WALLS IN AREA (${minX},${minY}) to (${maxX},${maxY}) ===`);
+	
+	const walls = canvas.walls.placeables.filter(wall => {
+		const startGrid = {
+			x: Math.floor(wall.document.c[0] / canvas.grid.size),
+			y: Math.floor(wall.document.c[1] / canvas.grid.size)
+		};
+		const endGrid = {
+			x: Math.floor(wall.document.c[2] / canvas.grid.size),
+			y: Math.floor(wall.document.c[3] / canvas.grid.size)
+		};
+		
+		// Check if wall intersects the area
+		const wallMinX = Math.min(startGrid.x, endGrid.x);
+		const wallMaxX = Math.max(startGrid.x, endGrid.x);
+		const wallMinY = Math.min(startGrid.y, endGrid.y);
+		const wallMaxY = Math.max(startGrid.y, endGrid.y);
+		
+		return !(wallMaxX < minX || wallMinX > maxX || wallMaxY < minY || wallMinY > maxY);
+	});
+	
+	console.log(`Found ${walls.length} walls in area:`);
+	walls.forEach((wall, i) => {
+		const startPixel = {x: wall.document.c[0], y: wall.document.c[1]};
+		const endPixel = {x: wall.document.c[2], y: wall.document.c[3]};
+		const startGrid = {
+			x: Math.floor(startPixel.x / canvas.grid.size),
+			y: Math.floor(startPixel.y / canvas.grid.size)
+		};
+		const endGrid = {
+			x: Math.floor(endPixel.x / canvas.grid.size),
+			y: Math.floor(endPixel.y / canvas.grid.size)
+		};
+		
+		console.log(`  ${i}: Grid (${startGrid.x},${startGrid.y}) to (${endGrid.x},${endGrid.y}) | Pixels (${startPixel.x},${startPixel.y}) to (${endPixel.x},${endPixel.y})`);
+	});
+	
+	return walls;
+}
+
 export let cache;
 
 export function initializeCaches() {
@@ -137,8 +353,8 @@ export class GriddedCache extends Cache {
 			}
 			node = {...pos, neighbors};
 
-			// Debug logging for graph construction (only for debug builds)
-			if (neighbors.length === 0) {
+			// Debug logging for graph construction
+			if (DEBUG_CONFIG.enabled && DEBUG_CONFIG.graphConstruction && neighbors.length === 0) {
 				console.warn(`[RoutingLib] Node at (${pos.x},${pos.y}) has NO neighbors - this could cause pathfinding issues`);
 			}
 
@@ -230,6 +446,7 @@ function detectLevels() {
 }
 
 export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
+	// Return values: false = free movement, true = blocked, "squeeze" = movement allowed but at double cost
 	const stepStart = getSnapPointForTokenDataObj(getPixelsFromGridPositionObj(from), tokenData);
 	const stepEnd = getSnapPointForTokenDataObj(getPixelsFromGridPositionObj(to), tokenData);
 	// Using an adjusted position 1 pixel away from the center of the grid
@@ -245,36 +462,43 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 		adjustedStart = stepStart;
 	}
 
-	let blocked = false;
+	/** @type {boolean | string} */ let blocked = false; // Can be false (free), true (blocked), or "squeeze" (difficult terrain)
 
 	try {
-		// Temporarily use simplified ray-based collision detection for debugging
+		// Use simplified ray-based collision detection
 		const ray = new Ray(adjustedStart, stepEnd);
 		
-		// Debug logging for movements that might cross the diagonal wall
-		const shouldDebug = (from.x >= 16 && from.x <= 20 && from.y >= 15 && from.y <= 19) ||
-						   (to.x >= 16 && to.x <= 20 && to.y >= 15 && to.y <= 19);
+			// Check if we should debug this specific movement
+	const shouldDebug = shouldDebugPosition(from, to);
+	
+	// Always log when collision detection is called for our debug positions
+	if (shouldDebug) {
+		console.log(`[RoutingLib] COLLISION CHECK: (${from.x}, ${from.y}) → (${to.x}, ${to.y})`);
+	}
+	
+	if (shouldDebug && DEBUG_CONFIG.verboseCollision) {
+		console.log(`[RoutingLib] DEBUG: === COLLISION CHECK ===`);
+		console.log(`[RoutingLib] DEBUG: Grid movement: (${from.x}, ${from.y}) → (${to.x}, ${to.y})`);
+		console.log(`[RoutingLib] DEBUG: Pixel movement: (${adjustedStart.x}, ${adjustedStart.y}) → (${stepEnd.x}, ${stepEnd.y})`);
+		console.log(`[RoutingLib] DEBUG: Token size: ${tokenData.width || 1}x${tokenData.height || 1} (w×h)`);
+		console.log(`[RoutingLib] DEBUG: TokenData:`, { width: tokenData.width, height: tokenData.height, disposition: tokenData.disposition });
+		console.log(`[RoutingLib] DEBUG: Found ${canvas.walls.placeables.length} walls to check`);
+	}
 		
-		if (shouldDebug) {
-			console.log(`[RoutingLib] DEBUG: === COLLISION CHECK ===`);
-			console.log(`[RoutingLib] DEBUG: Grid movement: (${from.x}, ${from.y}) → (${to.x}, ${to.y})`);
-			console.log(`[RoutingLib] DEBUG: Pixel movement: (${adjustedStart.x}, ${adjustedStart.y}) → (${stepEnd.x}, ${stepEnd.y})`);
-			console.log(`[RoutingLib] DEBUG: Found ${canvas.walls.placeables.length} walls to check`);
-		}
+		// Check each wall for collision using enhanced method
+		// This needs to handle multiple return types: false (no collision), true (blocked), "squeeze" (difficult terrain)
+		/** @type {boolean | string} */ let collisionResult = false;
 		
-		// Check each wall for collision using traditional method
-		blocked = canvas.walls.placeables.some(wall => {
+		for (const wall of canvas.walls.placeables) {
 			// Skip walls that don't block movement
 			if (wall.document.move === CONST.WALL_MOVEMENT_TYPES.NONE) {
-				if (shouldDebug) console.log(`[RoutingLib] DEBUG: Skipping wall - doesn't block movement: ${wall.document.move}`);
-				return false;
+				continue;
 			}
 			
 			// Skip open doors
 			if (wall.document.door !== CONST.WALL_DOOR_TYPES.NONE && 
 				wall.document.ds === CONST.WALL_DOOR_STATES.OPEN) {
-				if (shouldDebug) console.log(`[RoutingLib] DEBUG: Skipping wall - open door`);
-				return false;
+				continue;
 			}
 			
 			// Check wall height if wall-height module is active
@@ -284,15 +508,8 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 				const top = wallHeight?.top ?? Infinity;
 				const bottom = wallHeight?.bottom ?? -Infinity;
 				if (elevation < bottom || elevation > top) {
-					if (shouldDebug) console.log(`[RoutingLib] DEBUG: Skipping wall - elevation mismatch: token=${elevation}, wall=${bottom}-${top}`);
-					return false; // Token is outside wall height range
+					continue; // Token is outside wall height range
 				}
-			}
-			
-			// Use foundry.utils.lineSegmentIntersection for reliable collision detection
-			if (shouldDebug) {
-				console.log(`[RoutingLib] DEBUG: Testing wall segment: (${wall.document.c[0]},${wall.document.c[1]}) to (${wall.document.c[2]},${wall.document.c[3]})`);
-				console.log(`[RoutingLib] DEBUG: Movement ray: (${adjustedStart.x}, ${adjustedStart.y}) to (${stepEnd.x}, ${stepEnd.y})`);
 			}
 			
 			// Define movement ray endpoints
@@ -310,7 +527,7 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 				const utils = foundry?.utils || window?.foundry?.utils;
 				if (utils && utils['lineSegmentIntersection']) {
 					intersection = utils['lineSegmentIntersection'](rayStart, rayEnd, wallStart, wallEnd);
-					if (shouldDebug) console.log(`[RoutingLib] DEBUG: Using foundry.utils.lineSegmentIntersection`);
+					if (shouldDebug && DEBUG_CONFIG.wallIntersections) console.log(`[RoutingLib] DEBUG: Using foundry.utils.lineSegmentIntersection`);
 				} else {
 					// Fallback: use the ray intersectSegment method
 					const wallSegment = {
@@ -318,47 +535,79 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 						B: wallEnd
 					};
 					intersection = ray.intersectSegment(wallSegment);
-					if (shouldDebug) console.log(`[RoutingLib] DEBUG: Using ray.intersectSegment fallback`);
+					if (shouldDebug && DEBUG_CONFIG.wallIntersections) console.log(`[RoutingLib] DEBUG: Using ray.intersectSegment fallback`);
 				}
 			} catch (error) {
-				if (shouldDebug) console.log(`[RoutingLib] DEBUG: Intersection method error:`, error.message);
+				if (shouldDebug && DEBUG_CONFIG.wallIntersections) console.log(`[RoutingLib] DEBUG: Intersection method error:`, error.message);
 				intersection = null;
 			}
 			
-			if (shouldDebug) {
-				console.log(`[RoutingLib] DEBUG: Intersection result:`, intersection);
+			if (shouldDebug && DEBUG_CONFIG.wallIntersections) {
+				// Only show wall details that might actually intersect
+				if (intersection !== null || 
+					(Math.abs(from.x - 9) <= 1 && Math.abs(from.y - 18) <= 1) ||
+					(Math.abs(from.x - 10) <= 1 && Math.abs(from.y - 18) <= 1)) {
+					console.log(`[RoutingLib] DEBUG: Testing wall segment: (${wall.document.c[0]},${wall.document.c[1]}) to (${wall.document.c[2]},${wall.document.c[3]})`);
+					console.log(`[RoutingLib] DEBUG: Movement ray: (${adjustedStart.x}, ${adjustedStart.y}) to (${stepEnd.x}, ${stepEnd.y})`);
+					console.log(`[RoutingLib] DEBUG: Intersection result:`, intersection);
+				}
 			}
 			
 			// If we got an intersection with the center-to-center ray, definitely blocked
 			if (intersection !== null) {
-				return true;
+				collisionResult = true;
+				break;
 			}
 			
-			// Enhanced detection: Check if wall intersects with the grid square boundaries
-			// This catches walls that partially cross grid squares but don't intersect center-to-center movement
-			if (shouldDebug) {
-				console.log(`[RoutingLib] DEBUG: No center-to-center intersection, checking grid square boundaries`);
+			// Enhanced detection: Check if wall intersects with token footprint
+			// This accounts for token size and D&D squeezing rules
+			if (shouldDebug && DEBUG_CONFIG.squeezing) {
+				console.log(`[RoutingLib] ENHANCED: No center-to-center intersection for (${from.x},${from.y}) → (${to.x},${to.y}), checking token footprint`);
 			}
 			
-			// Calculate grid square boundaries for the destination square
 			const gridSize = canvas.grid.size;
-			const destGridX = Math.floor(stepEnd.x / gridSize);
-			const destGridY = Math.floor(stepEnd.y / gridSize);
-			const squareLeft = destGridX * gridSize;
-			const squareTop = destGridY * gridSize;
-			const squareRight = squareLeft + gridSize;
-			const squareBottom = squareTop + gridSize;
+			const tokenWidth = tokenData.width || 1;
+			const tokenHeight = tokenData.height || 1;
 			
-			// Check if wall intersects with any of the four grid square edges
-			const squareEdges = [
-				{ start: { x: squareLeft, y: squareTop }, end: { x: squareRight, y: squareTop } },     // Top edge
-				{ start: { x: squareRight, y: squareTop }, end: { x: squareRight, y: squareBottom } }, // Right edge
-				{ start: { x: squareRight, y: squareBottom }, end: { x: squareLeft, y: squareBottom } }, // Bottom edge
-				{ start: { x: squareLeft, y: squareBottom }, end: { x: squareLeft, y: squareTop } }     // Left edge
+			// D&D Squeezing rules:
+			// Large (2x2) can squeeze through 1 square at double cost
+			// Huge (3x3) can squeeze through 2 squares at double cost
+			const isLargeCreature = tokenWidth >= 2 || tokenHeight >= 2;
+			const isHugeCreature = tokenWidth >= 3 || tokenHeight >= 3;
+			
+			// Calculate movement direction and space available
+			const moveFromGridX = Math.floor(adjustedStart.x / gridSize);
+			const moveFromGridY = Math.floor(adjustedStart.y / gridSize);
+			const moveToGridX = Math.floor(stepEnd.x / gridSize);
+			const moveToGridY = Math.floor(stepEnd.y / gridSize);
+			
+			// Check if this is a squeezing scenario
+			const isDiagonalMove = moveFromGridX !== moveToGridX && moveFromGridY !== moveToGridY;
+			const isSingleSquareMove = Math.abs(moveFromGridX - moveToGridX) <= 1 && Math.abs(moveFromGridY - moveToGridY) <= 1;
+			
+			if (shouldDebug && DEBUG_CONFIG.squeezing) {
+				console.log(`[RoutingLib] DEBUG: Creature size: ${tokenWidth}x${tokenHeight}, Large: ${isLargeCreature}, Huge: ${isHugeCreature}`);
+				console.log(`[RoutingLib] DEBUG: Movement: (${moveFromGridX},${moveFromGridY}) → (${moveToGridX},${moveToGridY}), Diagonal: ${isDiagonalMove}`);
+			}
+			
+			// For squeezing, we only check if the destination square itself is blocked
+			// Large creatures can squeeze through 1 square, Huge through 2 squares
+			const destSquareLeft = moveToGridX * gridSize;
+			const destSquareTop = moveToGridY * gridSize;
+			const destSquareRight = destSquareLeft + gridSize;
+			const destSquareBottom = destSquareTop + gridSize;
+			
+			// Check if wall completely blocks the destination square
+			const destSquareEdges = [
+				{ start: { x: destSquareLeft, y: destSquareTop }, end: { x: destSquareRight, y: destSquareTop } },     // Top edge
+				{ start: { x: destSquareRight, y: destSquareTop }, end: { x: destSquareRight, y: destSquareBottom } }, // Right edge
+				{ start: { x: destSquareRight, y: destSquareBottom }, end: { x: destSquareLeft, y: destSquareBottom } }, // Bottom edge
+				{ start: { x: destSquareLeft, y: destSquareBottom }, end: { x: destSquareLeft, y: destSquareTop } }     // Left edge
 			];
 			
-			for (let i = 0; i < squareEdges.length; i++) {
-				const edge = squareEdges[i];
+			let destSquareBlocked = false;
+			for (let i = 0; i < destSquareEdges.length; i++) {
+				const edge = destSquareEdges[i];
 				let edgeIntersection = null;
 				
 				try {
@@ -374,24 +623,80 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 				}
 				
 				if (edgeIntersection !== null) {
-					if (shouldDebug) {
-						console.log(`[RoutingLib] DEBUG: Wall intersects grid square edge ${i + 1}, blocking movement`);
+					// Check if intersection is exactly at wall endpoint (indicates gap, not blocking wall)
+					const epsilon = 1.0; // Small tolerance for endpoint detection
+					const isWallEndpoint = 
+						(Math.abs(edgeIntersection.x - wallStart.x) < epsilon && Math.abs(edgeIntersection.y - wallStart.y) < epsilon) ||
+						(Math.abs(edgeIntersection.x - wallEnd.x) < epsilon && Math.abs(edgeIntersection.y - wallEnd.y) < epsilon);
+					
+					// Also check if edge is exactly on grid boundary where wall ends
+					const gridSize = canvas.grid.size;
+					const isEdgeOnGridBoundary = 
+						(edge.start.x % gridSize === 0 || edge.start.y % gridSize === 0) &&
+						(edge.end.x % gridSize === 0 || edge.end.y % gridSize === 0);
+					
+					if (isWallEndpoint && isEdgeOnGridBoundary) {
+						if (shouldDebug) {
+							console.log(`[RoutingLib] 🟡 GAP: Wall endpoint at grid boundary (${edgeIntersection.x},${edgeIntersection.y}) - allowing movement`);
+							console.log(`[RoutingLib] 🟡 Wall: (${wallStart.x},${wallStart.y}) to (${wallEnd.x},${wallEnd.y})`);
+							console.log(`[RoutingLib] 🟡 Edge: (${edge.start.x},${edge.start.y}) to (${edge.end.x},${edge.end.y})`);
+						}
+						// This is a gap between walls - allow movement
+						continue;
+					} else {
+						destSquareBlocked = true;
+						if (shouldDebug) {
+							console.log(`[RoutingLib] ❌ FOOTPRINT BLOCK: Wall intersects destination square (${moveToGridX},${moveToGridY}) edge ${i + 1}`);
+							console.log(`[RoutingLib] ❌ Wall: (${wallStart.x},${wallStart.y}) to (${wallEnd.x},${wallEnd.y})`);
+							console.log(`[RoutingLib] ❌ Edge: (${edge.start.x},${edge.start.y}) to (${edge.end.x},${edge.end.y})`);
+							console.log(`[RoutingLib] ❌ Intersection: (${edgeIntersection.x},${edgeIntersection.y})`);
+							console.log(`[RoutingLib] ❌ IsWallEndpoint: ${isWallEndpoint}, IsGridBoundary: ${isEdgeOnGridBoundary}`);
+						}
+						break;
 					}
-					return true; // Wall intersects with grid square boundary
 				}
 			}
 			
-			// Return true if there's an intersection (collision detected)
-			return false;
-		});
+			// Apply D&D squeezing rules
+			if (destSquareBlocked) {
+				// Check if creature can squeeze through this space
+				if (isLargeCreature && isSingleSquareMove) {
+					// Large creatures can squeeze through 1 square at double cost
+					if (shouldDebug && DEBUG_CONFIG.squeezing) {
+						console.log(`[RoutingLib] DEBUG: Large creature squeezing through 1 square - difficult terrain`);
+					}
+					collisionResult = "squeeze"; // Allow movement but at double cost
+					break;
+				} else if (isHugeCreature && isSingleSquareMove) {
+					// Huge creatures can squeeze through 2 squares - for now treat same as large
+					// TODO: Could implement more complex 2-square squeezing logic
+					if (shouldDebug && DEBUG_CONFIG.squeezing) {
+						console.log(`[RoutingLib] DEBUG: Huge creature squeezing through narrow space - difficult terrain`);
+					}
+					collisionResult = "squeeze"; // Allow movement but at double cost
+					break;
+				} else {
+					// Cannot squeeze - completely blocked
+					if (shouldDebug && DEBUG_CONFIG.squeezing) {
+						console.log(`[RoutingLib] DEBUG: Movement completely blocked - cannot squeeze`);
+					}
+					collisionResult = true;
+					break;
+				}
+			}
+		}
+		
+		blocked = collisionResult;
 	} catch (error) {
 		console.warn("[RoutingLib] Collision detection error:", error);
 		// Default to allowing movement if collision detection fails
 		blocked = false;
 	}
 
-	// Only log blocked movements for debugging
-	if (blocked) {
+	// Log movement results for debugging - only show important results
+	const shouldDebug = shouldDebugPosition(from, to);
+	
+	if (blocked === true && (shouldDebug || DEBUG_CONFIG.blockedMovements)) {
 		console.log(
 			`%c[RoutingLib] BLOCKED  %d,%d → %d,%d (elev=%d)`,
 			"color:red",
@@ -401,17 +706,55 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 			to.y,
 			tokenData.elevation ?? 0,
 		);
+	} else if (blocked === "squeeze" && (shouldDebug || DEBUG_CONFIG.blockedMovements)) {
+		console.log(
+			`%c[RoutingLib] SQUEEZE  %d,%d → %d,%d (elev=%d) - DIFFICULT TERRAIN`,
+			"color:orange",
+			from.x,
+			from.y,
+			to.x,
+			to.y,
+			tokenData.elevation ?? 0,
+		);
+	} else if (blocked === false && shouldDebug && DEBUG_CONFIG.allowedMovements) {
+		console.log(
+			`%c[RoutingLib] ALLOWED  %d,%d → %d,%d (elev=%d)`,
+			"color:green",
+			from.x,
+			from.y,
+			to.x,
+			to.y,
+			tokenData.elevation ?? 0,
+		);
 	}
 
-	// Visualise blocker if requested
-	if (blocked && canvas?.stage) {
-		const g = new PIXI.Graphics();
-		g.lineStyle(2, 0xff0000, 0.8)
-			.moveTo(stepStart.x, stepStart.y)
-			.lineTo(stepEnd.x, stepEnd.y);
-		// auto-remove after 3 seconds
-		canvas.stage.addChild(g);
-		setTimeout(() => g.destroy(), 20000);
+	// Visualise movement results if requested
+	if (canvas?.stage && shouldDebug) {
+		if (blocked === true) {
+			// Red line for completely blocked movement
+			const g = new PIXI.Graphics();
+			g.lineStyle(2, 0xff0000, 0.8)
+				.moveTo(stepStart.x, stepStart.y)
+				.lineTo(stepEnd.x, stepEnd.y);
+			canvas.stage.addChild(g);
+			setTimeout(() => g.destroy(), 5000);
+		} else if (blocked === "squeeze") {
+			// Orange line for squeezing movement (difficult terrain)
+			const g = new PIXI.Graphics();
+			g.lineStyle(2, 0xff8800, 0.8)
+				.moveTo(stepStart.x, stepStart.y)
+				.lineTo(stepEnd.x, stepEnd.y);
+			canvas.stage.addChild(g);
+			setTimeout(() => g.destroy(), 10000);
+		} else if (blocked === false) {
+			// Green line for allowed movement - make it more visible and last longer
+			const g = new PIXI.Graphics();
+			g.lineStyle(2, 0x00ff00, 0.6)
+				.moveTo(stepStart.x, stepStart.y)
+				.lineTo(stepEnd.x, stepEnd.y);
+			canvas.stage.addChild(g);
+			setTimeout(() => g.destroy(), 10000);
+		}
 	}
 	return blocked;
 }
