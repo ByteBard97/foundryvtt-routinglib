@@ -98,6 +98,29 @@ function initializeIfReady() {
 	if (!foundryReady || !wasmReady) return;
 	initializeCaches();
 	initializeBackground();
+
+	// ────────────────────────────
+	//  Fancy banner so users (and devs) know RoutingLib is active
+	// ────────────────────────────
+	const version = game.modules.get("routinglib")?.version ?? "dev";
+	const banner = String.raw`
+ ██▀███   ▒█████   █    ██ ▄▄▄█████▓ ██▓ ███▄    █   ▄████  ██▓     ██▓ ▄▄▄▄   
+▓██ ▒ ██▒▒██▒  ██▒ ██  ▓██▒▓  ██▒ ▓▒▓██▒ ██ ▀█   █  ██▒ ▀█▒▓██▒    ▓██▒▓█████▄ 
+▓██ ░▄█ ▒▒██░  ██▒▓██  ▒██░▒ ▓██░ ▒░▒██▒▓██  ▀█ ██▒▒██░▄▄▄░▒██░    ▒██▒▒██▒ ▄██
+▒██▀▀█▄  ▒██   ██░▓▓█  ░██░░ ▓██▓ ░ ░██░▓██▒  ▐▌██▒░▓█  ██▓▒██░    ░██░▒██░█▀  
+░██▓ ▒██▒░ ████▓▒░▒▒█████▓   ▒██▒ ░ ░██░▒██░   ▓██░░▒▓███▀▒░██████▒░██░░▓█  ▀█▓
+░ ▒▓ ░▒▓░░ ▒░▒░▒░ ░▒▓▒ ▒ ▒   ▒ ░░   ░▓  ░ ▒░   ▒ ▒  ░▒   ▒ ░ ▒░▓  ░░▓  ░▒▓███▀▒
+  ░▒ ░ ▒░  ░ ▒ ▒░ ░░▒░ ░ ░     ░     ▒ ░░ ░░   ░ ▒░  ░   ░ ░ ░ ▒  ░ ▒ ░▒░▒   ░ 
+  ░░   ░ ░ ░ ░ ▒   ░░░ ░ ░   ░       ▒ ░   ░   ░ ░ ░ ░   ░   ░ ░    ▒ ░ ░    ░ 
+   ░         ░ ░     ░               ░           ░       ░     ░  ░ ░   ░      
+                                                                             ░ `;
+
+	// Print with a green monospace style
+	// eslint-disable-next-line no-console
+	console.log(`%c${banner}`, "color:#4caf50; font-family:monospace;");
+	// eslint-disable-next-line no-console
+	console.log(`%cRoutingLib v${version} loaded`, "color:#4caf50; font-family:monospace;");
+
 	window.routinglib = {calculatePath, calculatePathBlocking, cancelPathfinding};
 
 	Hooks.on("canvasInit", wipeCaches);
