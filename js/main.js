@@ -8,6 +8,13 @@ import {getAltOrientationFlagForToken, getHexTokenSize, isModuleActive} from "./
 let foundryReady = false;
 let wasmReady = false;
 
+// ---------------------------------------------------------------------------
+//  Build identifier – bump manually when you make local changes and want to
+//  confirm the browser has reloaded the latest code.  A simple integer or
+//  date-string works fine.
+// ---------------------------------------------------------------------------
+export const BUILD_ID = "2025-07-09g";
+
 function initializePathfinder(from, to, options) {
 	const token = options.token;
 
@@ -119,7 +126,7 @@ function initializeIfReady() {
 	// eslint-disable-next-line no-console
 	console.log(`%c${banner}`, "color:#4caf50; font-family:monospace;");
 	// eslint-disable-next-line no-console
-	console.log(`%cRoutingLib v${version} loaded`, "color:#4caf50; font-family:monospace;");
+	console.log(`%cRoutingLib v${version}  build ${BUILD_ID} loaded`, "color:#4caf50; font-family:monospace;");
 
 	window.routinglib = {calculatePath, calculatePathBlocking, cancelPathfinding};
 
@@ -129,6 +136,18 @@ function initializeIfReady() {
 	Hooks.on("createWall", wipeCaches);
 	Hooks.on("updateWall", wipeCaches);
 	Hooks.on("deleteWall", wipeCaches);
+
+	// Rebuild path-finding graphs automatically when the Scene grid
+	// configuration is changed (size, type, etc.).  Otherwise a stale
+	// cache from the previous grid resolution can lead to phantom blockers.
+	Hooks.on("updateScene", (scene, diff) => {
+		if (diff.grid || diff.gridSize || diff.gridType) {
+			// eslint-disable-next-line no-console
+			console.log("[RoutingLib] Grid settings changed – rebuilding caches");
+			wipeCaches();        // drops all graphs immediately
+			initializeCaches();  // rebuild for the new grid
+		}
+	});
 
 	Hooks.callAll("routinglib.ready");
 }
