@@ -4,6 +4,42 @@
 
 Instead of uniform grid resolution everywhere, implement **recursive refinement** near complex boundaries for more realistic paths around obstacles.
 
+## 🚀 **ALTERNATIVE: Simple 4x Grid Subdivision**
+
+Before implementing the full multi-scale system, consider this **simpler approach** that could provide 80% of the benefits with 20% of the complexity:
+
+### **Concept: Internal 4x Finer Grid**
+```
+Current:  70×70 pixel squares (Foundry grid)
+Internal: 17.5×17.5 pixel squares (4x subdivision)  
+Search:   4×4 = 16 nodes per Foundry square
+Interface: Still reports results in Foundry coordinates
+```
+
+### **Implementation Complexity: MEDIUM** ⚡
+**Estimated Time**: 1-2 weeks  
+**Required Changes**:
+
+1. **GriddedCache.reset()** - Calculate `gridWidth/Height` as `4 * originalDimensions` 
+2. **Coordinate Conversion** - New functions:
+   ```javascript
+   foundryToInternal(foundryX, foundryY) -> (internalX, internalY) 
+   internalToFoundry(internalX, internalY) -> (foundryX, foundryY)
+   ```
+3. **Interface Layer** - Convert user coordinates at boundaries
+4. **Performance** - 16x more nodes but simpler algorithm
+
+### **Benefits vs Full Multi-Scale**:
+- ✅ **Much simpler** to implement and debug
+- ✅ **Better paths** around 1-square gaps and obstacles  
+- ✅ **Compatible** with existing collision detection
+- ✅ **Gradual migration** - can upgrade to full multi-scale later
+- ❌ **Fixed resolution** - no adaptive refinement
+- ❌ **Higher memory** usage everywhere (not just where needed)
+
+### **Decision Point**: 
+Consider implementing **4x subdivision first** as proof-of-concept, then evaluate if full multi-scale is needed.
+
 ## 📚 **Research Summary**
 
 ### **Best Reference Implementation: mich101mich/hierarchical_pathfinding**

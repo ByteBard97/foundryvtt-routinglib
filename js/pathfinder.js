@@ -50,29 +50,29 @@ export class GriddedPathfinder {
 			previous: null,
 		});
 
-		// Debug logging for pathfinding setup
-		console.log(`[RoutingLib] Pathfinding from (${this.startPos.x},${this.startPos.y}) to (${this.targetPos.x},${this.targetPos.y})`);
-		console.log(`[RoutingLib] Start node has ${this.startNode.neighbors.length} neighbors`);
-		console.log(`[RoutingLib] Grid dimensions: ${this.gridWidth}x${this.gridHeight}`);
+		// Debug logging for pathfinding setup - DISABLED for production
+		// console.log(`[RoutingLib] Pathfinding from (${this.startPos.x},${this.startPos.y}) to (${this.targetPos.x},${this.targetPos.y})`);
+		// console.log(`[RoutingLib] Start node has ${this.startNode.neighbors.length} neighbors`);
+		// console.log(`[RoutingLib] Grid dimensions: ${this.gridWidth}x${this.gridHeight}`);
 	}
 
 	step() {
 		const currentNode = this.nextNodes.pop();
 		if (!currentNode) {
-			console.log(`[RoutingLib] Pathfinding failed: No more nodes to explore`);
+			// console.log(`[RoutingLib] Pathfinding failed: No more nodes to explore`);
 			return null;
 		}
 		if (currentNode.cost > this.maxDistance) {
-			console.log(`[RoutingLib] Pathfinding failed: Cost ${currentNode.cost} exceeds max distance ${this.maxDistance}`);
+			// console.log(`[RoutingLib] Pathfinding failed: Cost ${currentNode.cost} exceeds max distance ${this.maxDistance}`);
 			return null;
 		}
 		if (currentNode.node.x === this.targetPos.x && currentNode.node.y === this.targetPos.y) {
-			console.log(`[RoutingLib] Pathfinding succeeded: Reached target (${this.targetPos.x},${this.targetPos.y})`);
+			// console.log(`[RoutingLib] Pathfinding succeeded: Reached target (${this.targetPos.x},${this.targetPos.y})`);
 			return currentNode;
 		}
 		this.previousNodes.add(nodeId(currentNode.node));
 		
-		console.log(`[RoutingLib] Exploring node (${currentNode.node.x},${currentNode.node.y}) with ${currentNode.node.neighbors.length} neighbors`);
+		// console.log(`[RoutingLib] Exploring node (${currentNode.node.x},${currentNode.node.y}) with ${currentNode.node.neighbors.length} neighbors`);
 		
 		const tokenArea = getAreaFromPositionAndShape(currentNode.node, this.tokenShape);
 		for (const neighbor of currentNode.node.neighbors) {

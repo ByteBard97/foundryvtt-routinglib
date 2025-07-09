@@ -6,7 +6,7 @@ import * as GridlessPathfinding from "../wasm/gridless_pathfinding.js";
 
 // Debug configuration
 const DEBUG_CONFIG = {
-	enabled: true, // Master debug toggle
+	enabled: false, // Master debug toggle - DISABLED for production
 	verboseCollision: false, // Detailed collision detection logs - too noisy
 	graphConstruction: false, // Graph building logs
 	specificPositions: [], // Array of {x, y} positions to debug specifically - if empty, debugs all
@@ -693,7 +693,8 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 		blocked = false;
 	}
 
-	// Log movement results for debugging - only show important results
+	// Log movement results for debugging - DISABLED for production
+	/* 
 	const shouldDebug = shouldDebugPosition(from, to);
 	
 	if (blocked === true && (shouldDebug || DEBUG_CONFIG.blockedMovements)) {
@@ -727,8 +728,11 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 			tokenData.elevation ?? 0,
 		);
 	}
+	*/
 
-	// Visualise movement results if requested
+	// Visualise movement results if requested - DISABLED for production
+	/* 
+	const shouldDebug = shouldDebugPosition(from, to);
 	if (canvas?.stage && shouldDebug) {
 		if (blocked === true) {
 			// Red line for completely blocked movement
@@ -756,5 +760,6 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 			setTimeout(() => g.destroy(), 10000);
 		}
 	}
+	*/
 	return blocked;
 }
