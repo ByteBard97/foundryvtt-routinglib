@@ -466,7 +466,7 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 
 	try {
 		// Use simplified ray-based collision detection
-		const ray = new Ray(adjustedStart, stepEnd);
+		const ray = new foundry.canvas.geometry.Ray(adjustedStart, stepEnd);
 		
 			// Check if we should debug this specific movement
 	const shouldDebug = shouldDebugPosition(from, to);

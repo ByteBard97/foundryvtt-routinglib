@@ -39,14 +39,13 @@
   
     // Convert helpers -----------------------------------------------------------
     const pixelToGrid = (pt) => {
-      const [row, col] = canvas.grid.getGridPositionFromPixels(pt.x, pt.y);
-      return { x: col, y: row }; // routinglib expects {x:col, y:row}
+      const offset = canvas.grid.getOffset({x: pt.x, y: pt.y});
+      return { x: offset.i, y: offset.j }; // routinglib expects {x:col, y:row}
     };
-  
+
     const gridToPixelCenter = (gp) => {
-      const tl = canvas.grid.getTopLeftPoint({ i: gp.y, j: gp.x });
-      const [cx, cy] = canvas.grid.getCenter(tl.x, tl.y);
-      return { x: cx, y: cy };
+      const centerPoint = canvas.grid.getCenterPoint({i: gp.y, j: gp.x});
+      return { x: centerPoint.x, y: centerPoint.y };
     };
   
     // ---------------------------------------------------------------------------

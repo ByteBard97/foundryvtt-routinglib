@@ -163,10 +163,11 @@ class PathfindingRuler
 	
 	convertLocationToGridspace(location)
 	{
-			let gridspace = canvas.grid.getCenter(location.x,location.y);
-			gridspace[0] = (gridspace[0] / canvas.grid.size) - .5;
-			gridspace[1] = (gridspace[1] / canvas.grid.size) - .5;
-			return gridspace;
+		let gridspace = canvas.grid.getCenterPoint({x: location.x, y: location.y});
+		let gridspaceArray = [gridspace.x, gridspace.y];
+		gridspaceArray[0] = (gridspaceArray[0] / canvas.grid.size) - .5;
+		gridspaceArray[1] = (gridspaceArray[1] / canvas.grid.size) - .5;
+		return gridspaceArray;
 	}
 	
 	convertGridspaceToLocation(gridspace)
@@ -206,7 +207,7 @@ class PathfindingRuler
 			A = this.convertGridspaceToLocation(A);
 			B = this.convertGridspaceToLocation(B);
 		}
-		let ray = new Ray(A,B);
+		let ray = new foundry.canvas.geometry.Ray(A,B);
 		if (ray)
 			return canvas.walls.checkCollision(ray,{blockMovement:true, blockSenses:false, mode:"any"});
 		else return true;

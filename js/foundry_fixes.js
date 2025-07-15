@@ -13,7 +13,7 @@ export function getPixelsFromGridPosition(xGrid, yGrid) {
 // Wrapper to fix a FoundryVTT bug that causes the return values of canvas.grid.getPixelsFromGridPosition to be ordered inconsistently
 // https://gitlab.com/foundrynet/foundryvtt/-/issues/4705
 export function getGridPositionFromPixels(xPixel, yPixel) {
-	const [x, y] = canvas.grid.getGridPositionFromPixels(xPixel, yPixel);
+	const [x, y] = canvas.grid.getOffset({x: xPixel, y: yPixel});
 	if (canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) return [y, x];
 	return [x, y];
 }
@@ -32,6 +32,8 @@ export function getPixelsFromGridPositionObj(o) {
 
 export function getCenterFromGridPositionObj(o) {
 	const r = getPixelsFromGridPositionObj(o);
-	[r.x, r.y] = canvas.grid.getCenter(r.x, r.y);
+	const centerPoint = canvas.grid.getCenterPoint({x: r.x, y: r.y});
+	r.x = centerPoint.x;
+	r.y = centerPoint.y;
 	return r;
 }

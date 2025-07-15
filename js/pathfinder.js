@@ -111,7 +111,7 @@ export class GriddedPathfinder {
 		for (const srcCell of tokenArea) {
 			const dstCell = applyOffset(srcCell, offset);
 			// TODO Cache the result of source->destination measurements to speed up the pathfinding for large tokens
-			const ray = new Ray(
+			const ray = new foundry.canvas.geometry.Ray(
 				getCenterFromGridPositionObj(srcCell),
 				getCenterFromGridPositionObj(dstCell),
 			);

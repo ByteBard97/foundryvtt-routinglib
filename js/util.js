@@ -37,10 +37,12 @@ function getSnapPointForTokenData(x, y, tokenData) {
 				const snapPoint = findVertexSnapPoint(x, y, tokenData.hexSizeSupport.altOrientationFlag);
 				return new PIXI.Point(snapPoint.x, snapPoint.y);
 			} else {
-				return new PIXI.Point(...canvas.grid.getCenter(x, y));
+				const centerPoint = canvas.grid.getCenterPoint({x: x, y: y});
+				return new PIXI.Point(centerPoint.x, centerPoint.y);
 			}
 		} else {
-			return new PIXI.Point(...canvas.grid.getCenter(x, y));
+			const centerPoint = canvas.grid.getCenterPoint({x: x, y: y});
+			return new PIXI.Point(centerPoint.x, centerPoint.y);
 		}
 	}
 
