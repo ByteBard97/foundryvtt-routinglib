@@ -13,7 +13,7 @@ const DEBUG_CONFIG = {
 	wallIntersections: false, // Wall intersection details - very verbose
 	squeezing: false, // Squeezing/large creature movement logs
 	summaryOnly: true, // Only show final results, not detailed wall-by-wall checks
-	blockedMovements: true, // Always show when movements are blocked
+	blockedMovements: false, // Always show when movements are blocked
 	allowedMovements: false // Show when movements are allowed (can be noisy)
 };
 
