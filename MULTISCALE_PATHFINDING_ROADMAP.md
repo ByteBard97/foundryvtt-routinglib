@@ -4,9 +4,37 @@
 
 Instead of uniform grid resolution everywhere, implement **recursive refinement** near complex boundaries for more realistic paths around obstacles.
 
+## 🚀 **RECOMMENDED: Pre-Cached Hierarchical Grid**
+
+The most promising approach combines the benefits of both simple subdivision and full multi-scale systems:
+
+### **Concept: Scene-Load Cache Building**
+```
+Scene Load: Pre-analyze all wall intersections
+Build Cache: Only subdivide squares with wall complexity  
+Runtime:    Fast lookup + A* on appropriate resolution level
+Memory:     Sparse storage (most squares stay coarse)
+```
+
+### **Implementation Complexity: LOW-MEDIUM** ⚡
+**Estimated Time**: 2-3 weeks  
+**Key Insight**: Do the expensive work once at scene load, not during every pathfinding operation
+
+**Required Changes**:
+1. **Enhanced GriddedCache** - Add multi-level storage with sparse arrays
+2. **Wall Analysis** - Pre-compute which squares need subdivision during cache build
+3. **Smart Pathfinding** - Use appropriate resolution level per grid area
+4. **Incremental Updates** - Only rebuild affected areas when walls change
+
+### **Performance Benefits**:
+- ✅ **Predictable speed** - No subdivision delays during pathfinding
+- ✅ **Memory efficient** - Only store detail where walls exist
+- ✅ **Scales well** - Large empty areas stay fast, complex areas get precision
+- ✅ **Integrates cleanly** - Extends existing cache system
+
 ## 🚀 **ALTERNATIVE: Simple 4x Grid Subdivision**
 
-Before implementing the full multi-scale system, consider this **simpler approach** that could provide 80% of the benefits with 20% of the complexity:
+For an even simpler approach that could provide 80% of the benefits with 20% of the complexity:
 
 ### **Concept: Internal 4x Finer Grid**
 ```
@@ -38,7 +66,7 @@ Interface: Still reports results in Foundry coordinates
 - ❌ **Higher memory** usage everywhere (not just where needed)
 
 ### **Decision Point**: 
-Consider implementing **4x subdivision first** as proof-of-concept, then evaluate if full multi-scale is needed.
+The **pre-cached hierarchical approach** offers the best balance of complexity vs. benefits. Consider implementing this first, with simple 4x subdivision as a fallback if cache complexity proves challenging.
 
 ## 📚 **Research Summary**
 
@@ -89,12 +117,18 @@ Consider implementing **4x subdivision first** as proof-of-concept, then evaluat
   - Test basic hierarchical pathfinding
   - Dependencies: Research complete
 
-### **Phase 2: Core Multi-Scale System (2-3 weeks)**
-- [ ] **Implement hierarchical graph structure**
-  - Extend current GriddedCache with cluster support
-  - Add chunk-based node management
-  - Create inter-cluster and intra-cluster edge systems
+### **Phase 2: Pre-Cached Hierarchical System (2-3 weeks)**
+- [ ] **Extend GriddedCache for multi-level storage**
+  - Add sparse arrays for different resolution levels
+  - Implement level-of-detail storage (only store subdivisions where needed)
+  - Create efficient lookup methods for appropriate resolution level
   - Dependencies: Phase 1 complete
+
+- [ ] **Implement wall-intersection pre-analysis**
+  - Detect which coarse grid squares intersect with walls during cache build
+  - Mark squares that need subdivision (1 level, 2 levels, etc.)
+  - Pre-compute passability at multiple resolution levels
+  - Dependencies: Multi-level storage ready
 
 - [ ] **Add adaptive refinement triggers**
   - Extend collision detection to return uncertainty flags

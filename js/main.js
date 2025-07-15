@@ -13,7 +13,7 @@ let wasmReady = false;
 //  confirm the browser has reloaded the latest code.  A simple integer or
 //  date-string works fine.
 // ---------------------------------------------------------------------------
-export const BUILD_ID = "2025-07-09g";
+export const BUILD_ID = "2025-07-15a";
 
 function initializePathfinder(from, to, options) {
 	const token = options.token;

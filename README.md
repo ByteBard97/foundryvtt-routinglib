@@ -1,6 +1,16 @@
 # routinglib
 Routinglib is a library module that offers pathfinding capabilities to other modules. The code for this library was initially written for the [Drag Ruler module](https://foundryvtt.com/packages/drag-ruler) and has been extracted into a library to open up the opportunity of using pathfinding to all modules.
 
+![Pathfinding through a maze](images/maze-pathfinding-example.webp)
+*Example: Routinglib navigating through a complex maze using the test macro*
+
+## Compatibility
+- **FoundryVTT v13**: Initial compatibility implemented - *currently undergoing testing*
+- **FoundryVTT v12**: Supported (with deprecation warning fixes)
+- **FoundryVTT v11**: Legacy support
+
+> **Note**: The v13 compatibility is functional but needs broader community testing. Please report any issues you encounter.
+
 ## Should I install this module?
 This module does not provide any user-facing features on it's own. Only install this module either if another module you're using has declared this module as a dependency or if another module you're using indicates that it will unlock specific features if routinglib is installed. If neihter of those apply to you, there is nothing to gain by installing routinglib.
 
@@ -9,8 +19,28 @@ The following table lists the capabilities and limitations of routinglib with re
 
 &nbsp; | Square or Hex grids | Gridless
 -|-|-
-Without difficult terrain | <ul><li>Fast<li>Will always find the shortest possible path, if a path exists<li>Can only calculate paths where each waypoint is snapped to the grid<li>Tokens of even size cannot squeeze through a 1 square hallway</ul> | <ul><li>Fast on small scenes, slow on scenes with thousands of walls<li>Will find paths that are close to the shortest possible path<li>Tokens aren't able to squeeze through hallways smaller than they are themselves</ul>
-With difficult terrain | <ul><li>Somewhat fast for 1x1 tokens, getting increasingly slower with token size<li>Will always find the shortest possible path, if a path exists<li>Can only calculate paths where each waypoint is snapped to the grid<li>Tokens of even size cannot squeeze through a 1 square hallway</ul> | Currently unsupported, terrain will be ignored on gridless scenes
+Without difficult terrain | <ul><li>Fast<li>Will always find the shortest possible path, if a path exists<li>Can only calculate paths where each waypoint is snapped to the grid<li>Tokens of even size cannot squeeze through a 1 square hallway *(under active development)*</ul> | <ul><li>Fast on small scenes, slow on scenes with thousands of walls<li>Will find paths that are close to the shortest possible path<li>Tokens aren't able to squeeze through hallways smaller than they are themselves</ul>
+With difficult terrain | <ul><li>Somewhat fast for 1x1 tokens, getting increasingly slower with token size<li>Will always find the shortest possible path, if a path exists<li>Can only calculate paths where each waypoint is snapped to the grid<li>Tokens of even size cannot squeeze through a 1 square hallway *(under active development)*</ul> | Currently unsupported, terrain will be ignored on gridless scenes
+
+## Planned Improvements
+
+### Multi-Scale Grid System
+A **pre-cached hierarchical grid system** is planned to address current grid resolution limitations:
+
+- **Adaptive Resolution**: Areas with complex wall geometry will use finer grid subdivisions
+- **Performance Optimized**: Expensive analysis done at scene load, not during pathfinding  
+- **Memory Efficient**: Only stores fine detail where walls create complexity
+- **Better Narrow Passages**: Improved navigation through 1-square gaps and complex geometry
+
+See `/MULTISCALE_PATHFINDING_ROADMAP.md` for detailed implementation plans.
+
+### Internal Grid System
+An alternative **4x subdivision approach** is also under consideration for faster implementation:
+- Internal 17.5×17.5 pixel resolution (vs current 70×70 pixel grid squares)
+- Maintains compatibility with existing Foundry coordinate system
+- Provides better pathfinding around obstacles with simpler implementation
+
+See `/INTERNAL_GRID_SYSTEM_ROADMAP.md` for details.
 
 ## Using routinglib in a module
 *This section is intended for module authors that would like to integrate routinglib's pathfinding capabilities into their modules. If you aren't a module author, you can stop reading here*
@@ -96,5 +126,14 @@ You're now ready to build routinglib.
 To build a custom release, simply execute the Python script `build_release.py`. The script will take care of building the rust code in a Release configuration to WebAssembly and will package all the necessary files into a zip file that can be installed in Foundry VTT. After the script has finished, the zip file can be found in the folder `artifact`.
 
 ### Building the WebAssembly component for development purposes
-If you're interested in modifying routinglib, you'll need to pouplate your working directory with the required WebAssembly files. To do this, execute `./build_wasm.py --debug`. This script will build the rust code and will store the resulting WebAssembly into the `wasm/` folder, which is the location foundry expects them to be in when it tries to load those components. The pyton script will remain active after the build has finished and will watch for changes in the Rust code. If the Rust code is modified, the script will automatically re-build the WebAssembly, to ensure you're always testing with the most up-to-date code as possible.
+If you're interested in modifying routinglib, you'll need to populate your working directory with the required WebAssembly files. To do this, execute `./build_wasm.py --debug`. This script will build the rust code and will store the resulting WebAssembly into the `wasm/` folder, which is the location foundry expects them to be in when it tries to load those components. The python script will remain active after the build has finished and will watch for changes in the Rust code. If the Rust code is modified, the script will automatically re-build the WebAssembly, to ensure you're always testing with the most up-to-date code as possible.
+
+### Testing and Development
+For testing pathfinding functionality, use the interactive test script:
+```javascript
+// Load and run: /macros/testRouting.js
+```
+This macro allows you to click start/end points on the canvas and visualizes the calculated path.
+
+An API comparison test is also available at `/macros/api_comparison_test.js` for debugging coordinate system compatibility.
 
