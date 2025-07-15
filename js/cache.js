@@ -115,18 +115,18 @@ export function debugSummary() {
 
 // Export function to convert pixel coordinates to grid coordinates
 export function pixelToGrid(pixelX, pixelY) {
-	const gridX = Math.floor(pixelX / canvas.grid.size);
-	const gridY = Math.floor(pixelY / canvas.grid.size);
+	const offset = canvas.grid.getOffset({x: pixelX, y: pixelY});
+	const gridX = offset.i;
+	const gridY = offset.j;
 	console.log(`[RoutingLib] Pixel (${pixelX}, ${pixelY}) → Grid (${gridX}, ${gridY})`);
 	return {x: gridX, y: gridY};
 }
 
 // Export function to convert grid coordinates to pixel coordinates  
 export function gridToPixel(gridX, gridY) {
-	const pixelX = gridX * canvas.grid.size + (canvas.grid.size / 2);
-	const pixelY = gridY * canvas.grid.size + (canvas.grid.size / 2);
-	console.log(`[RoutingLib] Grid (${gridX}, ${gridY}) → Pixel (${pixelX}, ${pixelY})`);
-	return {x: pixelX, y: pixelY};
+	const centerPoint = canvas.grid.getCenterPoint({i: gridX, j: gridY});
+	console.log(`[RoutingLib] Grid (${gridX}, ${gridY}) → Pixel (${centerPoint.x}, ${centerPoint.y})`);
+	return {x: centerPoint.x, y: centerPoint.y};
 }
 
 // Export function to analyze all walls and show their grid coordinates
@@ -138,13 +138,15 @@ export function analyzeWalls() {
 		const startPixel = {x: wall.document.c[0], y: wall.document.c[1]};
 		const endPixel = {x: wall.document.c[2], y: wall.document.c[3]};
 		
+		const startOffset = canvas.grid.getOffset({x: startPixel.x, y: startPixel.y});
 		const startGrid = {
-			x: Math.floor(startPixel.x / canvas.grid.size),
-			y: Math.floor(startPixel.y / canvas.grid.size)
+			x: startOffset.i,
+			y: startOffset.j
 		};
+		const endOffset = canvas.grid.getOffset({x: endPixel.x, y: endPixel.y});
 		const endGrid = {
-			x: Math.floor(endPixel.x / canvas.grid.size), 
-			y: Math.floor(endPixel.y / canvas.grid.size)
+			x: endOffset.i, 
+			y: endOffset.j
 		};
 		
 		return {
@@ -183,13 +185,15 @@ export function findWallsInArea(minX, minY, maxX, maxY) {
 	console.log(`[RoutingLib] === WALLS IN AREA (${minX},${minY}) to (${maxX},${maxY}) ===`);
 	
 	const walls = canvas.walls.placeables.filter(wall => {
+		const startOffset = canvas.grid.getOffset({x: wall.document.c[0], y: wall.document.c[1]});
 		const startGrid = {
-			x: Math.floor(wall.document.c[0] / canvas.grid.size),
-			y: Math.floor(wall.document.c[1] / canvas.grid.size)
+			x: startOffset.i,
+			y: startOffset.j
 		};
+		const endOffset = canvas.grid.getOffset({x: wall.document.c[2], y: wall.document.c[3]});
 		const endGrid = {
-			x: Math.floor(wall.document.c[2] / canvas.grid.size),
-			y: Math.floor(wall.document.c[3] / canvas.grid.size)
+			x: endOffset.i,
+			y: endOffset.j
 		};
 		
 		// Check if wall intersects the area
@@ -205,13 +209,15 @@ export function findWallsInArea(minX, minY, maxX, maxY) {
 	walls.forEach((wall, i) => {
 		const startPixel = {x: wall.document.c[0], y: wall.document.c[1]};
 		const endPixel = {x: wall.document.c[2], y: wall.document.c[3]};
+		const startOffset = canvas.grid.getOffset({x: startPixel.x, y: startPixel.y});
 		const startGrid = {
-			x: Math.floor(startPixel.x / canvas.grid.size),
-			y: Math.floor(startPixel.y / canvas.grid.size)
+			x: startOffset.i,
+			y: startOffset.j
 		};
+		const endOffset = canvas.grid.getOffset({x: endPixel.x, y: endPixel.y});
 		const endGrid = {
-			x: Math.floor(endPixel.x / canvas.grid.size),
-			y: Math.floor(endPixel.y / canvas.grid.size)
+			x: endOffset.i,
+			y: endOffset.j
 		};
 		
 		console.log(`  ${i}: Grid (${startGrid.x},${startGrid.y}) to (${endGrid.x},${endGrid.y}) | Pixels (${startPixel.x},${startPixel.y}) to (${endPixel.x},${endPixel.y})`);
@@ -693,8 +699,7 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 		blocked = false;
 	}
 
-	// Log movement results for debugging - DISABLED for production
-	/* 
+	// Log movement results for debugging - ENABLED for debugging
 	const shouldDebug = shouldDebugPosition(from, to);
 	
 	if (blocked === true && (shouldDebug || DEBUG_CONFIG.blockedMovements)) {
@@ -728,12 +733,10 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 			tokenData.elevation ?? 0,
 		);
 	}
-	*/
 
-	// Visualise movement results if requested - DISABLED for production
-	/* 
-	const shouldDebug = shouldDebugPosition(from, to);
-	if (canvas?.stage && shouldDebug) {
+	// Visualise movement results if requested - ENABLED for debugging
+	const shouldDebugVisualize = shouldDebugPosition(from, to);
+	if (canvas?.stage && shouldDebugVisualize) {
 		if (blocked === true) {
 			// Red line for completely blocked movement
 			const g = new PIXI.Graphics();
@@ -760,6 +763,5 @@ export function stepCollidesWithWall(from, to, tokenData, adjustPos = false) {
 			setTimeout(() => g.destroy(), 10000);
 		}
 	}
-	*/
 	return blocked;
 }

@@ -44,7 +44,7 @@
     };
 
     const gridToPixelCenter = (gp) => {
-      const centerPoint = canvas.grid.getCenterPoint({i: gp.y, j: gp.x});
+      const centerPoint = canvas.grid.getCenterPoint({i: gp.x, j: gp.y});
       return { x: centerPoint.x, y: centerPoint.y };
     };
   
