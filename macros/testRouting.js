@@ -40,7 +40,7 @@
     // Convert helpers -----------------------------------------------------------
     const pixelToGrid = (pt) => {
       const offset = canvas.grid.getOffset({x: pt.x, y: pt.y});
-      return { x: offset.i, y: offset.j }; // routinglib expects {x:col, y:row}
+      return { x: offset.j, y: offset.i }; // routinglib expects {x:col, y:row}
     };
 
     const gridToPixelCenter = (gp) => {
