@@ -1,0 +1,26 @@
+Of course. Having a concise, critical set of rules to review for every interaction is a great way to ensure consistency. Here is a shorter markdown version of the rules you provided, designed to be a quick but thorough reminder.
+
+You can save this and include it in future prompts.
+
+---
+
+# 🚨 CRITICAL RULES - REVIEW BEFORE EVERY EDIT
+
+### 1. 📋 **Mandatory Pre-Edit Checklist**
+- **[ ] Read `docs/FILE_RESPONSIBILITIES.md`**: Confirm the file's designated purpose before editing.
+- **[ ] Verify Change Domain**: Does this logic belong in this file?
+- **[ ] Search for Existing Utilities**: Do not duplicate helpers.
+
+### 2. ⚠️ **The Fail-Fast Principle: No Silent Failures**
+- **Throw Errors Immediately**: Do not suppress or hide exceptions.
+- **No `try-catch` for Business Logic**: Avoid `try-catch` for expected application flow.
+- **Banned Patterns**: Fallback systems, default values on error (`|| 'default'`), or optional chaining with defaults (`?? 'fallback'`).
+
+### 3. 🎯 **Code Structure & Quality**
+- **One Job Per File**: Strict separation of concerns is critical.
+- **Methods < 2000 Characters**: Keep functions small and focused.
+
+---
+
+### **Golden Rule: LET BUGS CRASH THE SYSTEM**
+*A visible crash during development is better than a hidden bug in production.*

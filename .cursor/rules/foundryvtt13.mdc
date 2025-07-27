@@ -1,0 +1,109 @@
+---
+alwaysApply: true
+---
+# Foundry VTT v13 + D&D 5e 5.0.4 Cursor Rules
+
+You are an expert Foundry VTT v13 and D&D 5e system developer with **full TypeScript support** and comprehensive type definitions available.
+
+## 🎯 **Type Definitions Available**
+
+This project has complete, production-ready TypeScript definitions for:
+- ✅ **Foundry VTT v13** - Full API coverage (`foundry.Game`, `foundry.documents.*`, `foundry.canvas.*`, etc.)
+- ✅ **D&D 5e 5.0.4** - Complete system types (`Actor5e`, `Item5e`, data models, etc.)  
+- ✅ **RoutingLib** - Pathfinding library types for token movement
+- ✅ **IntelliSense & Type Checking** - Zero TypeScript errors, full autocomplete support
+
+## 🚀 **Development Guidelines**
+
+### **Always Use Official APIs**
+- Use the official v13 API from https://foundryvtt.com/api/
+- Prioritize native Foundry features over third-party modules
+- Use ES6 modules, Application V2 patterns, and Token Drag Measurement system
+
+### **Leverage TypeScript Support**
+- **Use proper types** instead of `any` - you have full definitions available
+- **Rely on IntelliSense** - autocomplete works for `game.actors`, `ChatMessage.create()`, etc.
+- **Type-safe access** - use `actor.system.attributes.hp.value` with full type checking
+- **Import types** - use `import type` for D&D 5e specific types when needed
+
+### **Document vs Object Distinction**
+- **Documents (data)** - use `actor.system` for D&D 5e data access
+- **Objects (visual/interactive)** - use `tokenDoc.object` for canvas operations  
+- **Combat access** - use `combatant.actor` for combat data
+- **Type safety** - all these patterns have proper type definitions
+
+### **Code Quality Standards**
+- **Defensive coding** - proper null checks and type validation (TypeScript helps!)
+- **Separation of concerns** - data access vs business logic vs UI operations
+- **Small, focused functions** - single responsibility principle
+- **Composition over inheritance** - prefer pure functions where possible
+- **Minimal dependencies** - clear interfaces, avoid tight coupling
+
+### **D&D 5e Specific Development**
+- **Actor data** - use `actor.system.attributes`, `actor.system.details`, etc. with full typing
+- **Item operations** - leverage `Item5e` types for spells, weapons, features
+- **Rolls & dice** - use typed D&D 5e roll methods and damage calculations
+- **Character creation** - utilize typed character generation and advancement
+
+### **Before Writing Complex Solutions**
+1. **Check if Foundry provides it natively** - the v13 API is extensive
+2. **Break into smaller pieces** - use TypeScript interfaces to define contracts
+3. **Leverage existing types** - don't recreate what's already defined
+4. **Consider testability** - pure functions with typed inputs/outputs
+
+## 📁 **Project Structure**
+```
+/module/types/                    # Core project types
+├── foundry-vtt-v13.d.ts         # Complete Foundry v13 API types  
+└── routinglib.d.ts              # Module-specific library types
+
+/reference/systems/dnd5e/        # D&D 5e system reference types
+└── generated-types/             # Complete D&D 5e type definitions
+
+tsconfig.json                    # Configured for full type support
+```
+
+## 🎨 **Example Usage Patterns**
+
+### **Type-Safe Foundry Operations**
+```typescript
+// All these have full IntelliSense and type checking:
+const combat: foundry.documents.Combat = game.combat;
+const actors: foundry.documents.collections.Actors = game.actors;
+await ChatMessage.create({ content: "Hello", speaker: ChatMessage.getSpeaker() });
+```
+
+### **Type-Safe D&D 5e Operations**  
+```typescript
+// Import D&D 5e types when needed:
+import type Actor5e from "dnd5e/documents/actor/actor";
+
+// Use with full type safety:
+const hp = actor.system.attributes.hp.value;
+const saveRoll = await actor.rollAbilitySave('constitution');
+```
+
+### **Type-Safe Module Development**
+```typescript
+// Proper typing for custom functionality:
+interface CombatSuggestion {
+  action: string;
+  target?: foundry.documents.Token;
+  priority: number;
+}
+
+function getSuggestion(combatant: foundry.documents.Combatant): CombatSuggestion {
+  // Implementation with full type support
+}
+```
+
+## 🎯 **Key Advantages**
+
+With complete type definitions, you can:
+- **Catch errors at compile time** instead of runtime
+- **Get autocomplete** for all Foundry and D&D 5e APIs  
+- **Refactor safely** with IDE support
+- **Document APIs** through TypeScript interfaces
+- **Integrate seamlessly** with modern development tools
+
+**Write code confidently knowing you have comprehensive type support for the entire Foundry VTT and D&D 5e ecosystem!** 🚀 

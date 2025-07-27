@@ -1,12 +1,89 @@
+/* eslint-disable no-undef */
 import {initializeBackground, createAsyncPathfinder, cancelJob} from "./background.js";
 import {cache, GriddedCache, initializeCaches, wipeCaches, enableDebugForPositions, disableDebug, debugNarrowPassages, debugHorizontalBarrier, debugSummary, pixelToGrid, gridToPixel, analyzeWalls, findWallsInArea} from "./cache.js";
 import {GriddedPathfinder, GridlessPathfinder} from "./pathfinder.js";
+import { NavmeshBuilder } from './navmesh_builder.js';
+import { NavmeshDebugger } from './navmesh_debugger.js';
+import { Pathfinding } from './lib/three-pathfinding.mjs';
+import { jsts } from './lib/jsts-wrapper.js';
+import { poly2tri } from './lib/poly2tri-wrapper.js';
 
 import initGridlessPathfinding from "../wasm/gridless_pathfinding.js";
 import {getAltOrientationFlagForToken, getHexTokenSize, isModuleActive} from "./util.js";
 
 let foundryReady = false;
 let wasmReady = false;
+
+// Navmesh variables
+let pathfinding;
+let navmeshDebugger;
+
+// Define creature sizes and their radii in grid units (e.g., 0.5 for a Medium creature)
+// We'll convert this to pixels before passing it to the builder.
+const CREATURE_SIZES = {
+    "Medium": 0, // A radius of 0 represents a point, which is our default.
+    "Large": 0.5, // A 5ft radius, assuming a 5ft grid.
+    "Huge": 1.0,  // A 10ft radius.
+};
+
+// Hook into the canvasReady event
+Hooks.on('canvasReady', async () => {
+    console.log('RoutingLib | Canvas is ready, initializing navmesh...');
+    
+    navmeshDebugger = new NavmeshDebugger();
+    pathfinding = new Pathfinding();
+
+    await regenerateNavmesh();
+});
+
+/**
+ * Regenerates the navmesh for all defined creature sizes and updates the cache.
+ */
+async function regenerateNavmesh() {
+    console.log('RoutingLib | Wall change detected. Regenerating navmeshes for all sizes...');
+    
+    const builder = new NavmeshBuilder();
+    const NAVMESH_FLAG_PREFIX = 'navmeshData';
+
+    // Filter for walls that block movement
+    const walls = canvas.walls.documents.filter(wall => !(wall.door === CONST.WALL_DOOR_TYPES.DOOR && wall.ds === CONST.WALL_DOOR_STATES.OPEN));
+    
+    for (const size in CREATURE_SIZES) {
+        const radiusInGridUnits = CREATURE_SIZES[size];
+        const agentRadiusInPixels = radiusInGridUnits * canvas.grid.size;
+
+        console.log(`RoutingLib | Building navmesh for size: ${size} (radius: ${agentRadiusInPixels}px)...`);
+
+        // Build the navmesh
+        const zoneData = builder.build(walls, canvas.dimensions, agentRadiusInPixels);
+        const flagName = `${NAVMESH_FLAG_PREFIX}-${size}`;
+
+        if (zoneData) {
+            // In a real implementation, we would set pathfinding data for each size.
+            // For now, we'll just set the Medium one as the default.
+            if (size === "Medium") {
+                pathfinding.setZoneData('scene', zoneData);
+            }
+            
+            // Save the new navmesh to the cache
+            await canvas.scene.setFlag('routinglib', flagName, zoneData);
+            console.log(`RoutingLib | Navmesh for ${size} regenerated and cache updated.`);
+
+        } else {
+            console.error(`RoutingLib | Navmesh regeneration failed for size: ${size}.`);
+        }
+    }
+
+    // For debugging, always draw the last generated mesh.
+    // In a real implementation, you might have a dropdown to select which mesh to view.
+    navmeshDebugger.drawTriangles(builder.triangles);
+}
+
+// Hooks for wall updates
+Hooks.on('createWall', regenerateNavmesh);
+Hooks.on('updateWall', regenerateNavmesh);
+Hooks.on('deleteWall', regenerateNavmesh);
+
 
 // ---------------------------------------------------------------------------
 //  Build identifier – bump manually when you make local changes and want to
